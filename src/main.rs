@@ -7,6 +7,36 @@ const PLAYER_WIDTH: f32 = 22.0;
 
 const PLAYER_SPEED: f32 = 60.0;
 
+const BALL_VELOCITY_X: f32 = 30.0;
+const BALL_VELOCITY_Y: f32 = 0.0;
+const BALL_RADIUS: f32 = 4.0;
+
+#[derive(Component)]
+pub struct Ball {
+    pub velocity: Vec2,
+    pub radius: f32,
+}
+
+fn initialize_ball(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    atlas: Handle<TextureAtlas>,
+    ball_sprite: usize,
+) {
+    commands.spawn((
+        Ball {
+            velocity: Vec2::new(BALL_VELOCITY_X, BALL_VELOCITY_Y),
+            radius: BALL_RADIUS,
+        },
+        SpriteSheetBundle {
+            sprite: TextureAtlasSprite::new(ball_sprite),
+            texture_atlas: atlas,
+            transform: Transform::from_xyz(ARENA_WIDTH / 2.0, ARENA_HEIGHT / 2.0, 0.0),
+            ..default()
+        },
+    ));
+}
+
 fn player(
     keyboard_input: Res<Input<KeyCode>>,
     time: Res<Time>,
@@ -18,8 +48,7 @@ fn player(
         } else {
             0.0
         };
-        let right = if keyboard_input.pressed(
-            player.side.go_right_key()) {
+        let right = if keyboard_input.pressed(player.side.go_right_key()) {
             1.0f32
         } else {
             0.0
@@ -28,9 +57,7 @@ fn player(
         let offset = direction * PLAYER_SPEED * time.raw_delta_seconds();
         transform.translation.x += offset;
         let (left_limit, right_limit) = player.side.range();
-        transform.translation.x = transform.translation.x.clamp(
-            left_limit, right_limit
-        );
+        transform.translation.x = transform.translation.x.clamp(left_limit, right_limit);
     }
 }
 
@@ -108,6 +135,13 @@ fn setup(
         right_cat_corner,
         right_cat_corner + cat_size,
     ));
+
+    let ball_corner = Vec2::new(1.0, 1.0);
+    let ball_size = Vec2::new(8.0, 8.0);
+
+    let ball_index =
+        sprite_atlas.add_texture(Rect::from_corners(ball_corner, ball_corner + ball_size));
+
     let texture_atlas_handle = texture_atlases.add(sprite_atlas);
     commands.spawn(Camera2dBundle {
         transform: Transform::from_xyz(ARENA_WIDTH / 2.0, ARENA_HEIGHT / 2.0, 1.0),
@@ -125,11 +159,18 @@ fn setup(
 
     initialize_player(
         &mut commands,
-        texture_atlas_handle,
+        texture_atlas_handle.clone(),
         right_cat_index,
         Side::Right,
         ARENA_WIDTH - PLAYER_WIDTH / 2.0,
         PLAYER_HEIGHT / 2.0,
+    );
+
+    initialize_ball(
+        &mut commands,
+        &asset_server,
+        texture_atlas_handle.clone(),
+        ball_index,
     );
 }
 
