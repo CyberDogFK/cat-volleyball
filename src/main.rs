@@ -58,7 +58,7 @@ fn bounce(
                 if ball.velocity.y < 0.0 {
                     // Only bounce when ball is falling
                     ball.velocity.y = -ball.velocity.y;
-                    let mut rg = rand::thread_rng();
+                    let mut rng = rand::thread_rng();
 
                     match player.side {
                         Side::Left => {
