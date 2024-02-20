@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use rand::Rng;
 
 const ARENA_WIDTH: f32 = 200.0;
 const ARENA_HEIGHT: f32 = 200.0;
@@ -13,12 +14,32 @@ const BALL_RADIUS: f32 = 4.0;
 
 const GRAVITY_ACCELERATION: f32 = -40.0;
 
+fn bounce(
+    mut ball_query: Query<(&mut Ball, &Transform)>,
+    player_query: Query<(&Player, &Transform)>,
+) {
+    for (mut ball, ball_transform) in ball_query.iter_mut() {
+        let ball_x = ball_transform.translation.x;
+        let ball_y = ball_transform.translation.y;
+        if ball_y <= ball.radius && ball.velocity.y < 0.0 {
+            ball.velocity.y = -ball.velocity.y;
+        } else if ball_y >= (ARENA_HEIGHT - ball.radius) && ball.velocity.y > 0.0 {
+            ball.velocity.y = -ball.velocity.y;
+        } else if ball_x <= ball.radius && ball.velocity.x < 0.0 {
+            ball.velocity.x = -ball.velocity.x;
+        } else if ball_x >= (ARENA_WIDTH - ball.radius) && ball.velocity.x > 0.0 {
+            ball.velocity.x = -ball.velocity.x;
+        }
+        // ... additional collision detectino
+    }
+}
+
 fn move_ball(time: Res<Time>, mut query: Query<(&mut Ball, &mut Transform)>) {
     for (mut ball, mut transform) in query.iter_mut() {
         // Apply movement deltas
         transform.translation.x += ball.velocity.x * time.raw_delta_seconds();
-        transform.translation.y += (ball.velocity.y + time.raw_delta_seconds()
-            * GRAVITY_ACCELERATION / 2.0)
+        transform.translation.y += (ball.velocity.y
+            + time.raw_delta_seconds() * GRAVITY_ACCELERATION / 2.0)
             * time.raw_delta_seconds();
         ball.velocity.y += time.raw_delta_seconds() * GRAVITY_ACCELERATION;
     }
@@ -201,5 +222,6 @@ fn main() {
         .add_startup_system(setup)
         .add_system(player)
         .add_system(move_ball)
+        .add_system(bounce)
         .run();
 }
