@@ -16,12 +16,9 @@ const GRAVITY_ACCELERATION: f32 = -40.0;
 
 const SCORE_FONT_SIZE: f32 = 20.0;
 
-
-
-
 #[derive(Component)]
 struct ScoreBoard {
-    side: Side
+    side: Side,
 }
 
 fn initialize_scoreboard(
@@ -32,27 +29,25 @@ fn initialize_scoreboard(
 ) {
     commands.spawn((
         ScoreBoard { side },
-        TextBundle::from_sections([
-            TextSection::from_style(TextStyle {
-                font_size: SCORE_FONT_SIZE,
-                color: Color::WHITE,
-                font: asset_server.load("fonts/Minecrafter.Reg.ttf"),
-            })
-        ])
-            .with_style(Style {
-                position_type: PositionType::Absolute,
-                position: UiRect {
-                    top: Val::Px(25.0),
-                    left: Val::Px(x),
-                    ..default()
-                },
+        TextBundle::from_sections([TextSection::from_style(TextStyle {
+            font_size: SCORE_FONT_SIZE,
+            color: Color::WHITE,
+            font: asset_server.load("fonts/Minecrafter.Reg.ttf"),
+        })])
+        .with_style(Style {
+            position_type: PositionType::Absolute,
+            position: UiRect {
+                top: Val::Px(25.0),
+                left: Val::Px(x),
                 ..default()
-            })
-            .with_text_alignment(match side {
-                Side::Left => TextAlignment::Left,
-                Side::Right => TextAlignment::Right,
-            }),
-        ));
+            },
+            ..default()
+        })
+        .with_text_alignment(match side {
+            Side::Left => TextAlignment::Left,
+            Side::Right => TextAlignment::Right,
+        }),
+    ));
 }
 
 #[derive(Resource)]
@@ -91,10 +86,7 @@ fn scoring(
     }
 }
 
-fn score_display(
-    score: Res<Score>,
-    mut query: Query<(&mut Text, &ScoreBoard)>
-) {
+fn score_display(score: Res<Score>, mut query: Query<(&mut Text, &ScoreBoard)>) {
     for (mut text, scoreboard) in query.iter_mut() {
         text.sections[0].value = match scoreboard.side {
             Side::Left => score.left.to_string(),
@@ -167,12 +159,10 @@ fn bounce(
 
                     match player.side {
                         Side::Left => {
-                            ball.velocity.x = ball.velocity.x.abs()
-                                * rng.gen_range(0.6..1.4)
+                            ball.velocity.x = ball.velocity.x.abs() * rng.gen_range(0.6..1.4)
                         }
                         Side::Right => {
-                            ball.velocity.x = -ball.velocity.x.abs()
-                                * rng.gen_range(0.6..1.4)
+                            ball.velocity.x = -ball.velocity.x.abs() * rng.gen_range(0.6..1.4)
                         }
                     }
                 }
@@ -197,7 +187,7 @@ pub struct Ball {
     pub velocity: Vec2,
     pub radius: f32,
     pub bounce: Handle<AudioSource>, // Audio source for bouncing
-    pub score: Handle<AudioSource>, // Audio source for scoring
+    pub score: Handle<AudioSource>,  // Audio source for scoring
 }
 
 fn initialize_ball(
@@ -311,9 +301,7 @@ fn setup(
     audio: Res<Audio>, // Added audio subsystem
 ) {
     audio.play_with_settings(
-        asset_server.load(
-            "audio/Computer_Music_All_Stars_-_Albatross_v2.ogg"
-        ),
+        asset_server.load("audio/Computer_Music_All_Stars_-_Albatross_v2.ogg"),
         PlaybackSettings::LOOP.with_volume(0.25),
     );
     let spritesheet = asset_server.load("textures/spritesheet-3.png");
@@ -371,13 +359,13 @@ fn setup(
         &mut commands,
         &asset_server,
         Side::Left,
-        ARENA_WIDTH / 2.0 - 25.0
+        ARENA_WIDTH / 2.0 - 25.0,
     );
     initialize_scoreboard(
         &mut commands,
         &asset_server,
         Side::Right,
-        ARENA_WIDTH / 2.0 + 25.0
+        ARENA_WIDTH / 2.0 + 25.0,
     );
 }
 
