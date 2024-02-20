@@ -64,12 +64,14 @@ struct Score {
 fn scoring(
     mut query: Query<(&mut Ball, &mut Transform)>,
     mut score: ResMut<Score>,
+    audio: Res<Audio>, // Audio resource added
 ) {
     for (mut ball, mut transform) in query.iter_mut() {
         let ball_x = transform.translation.x;
         let ball_y = transform.translation.y;
         if ball_y < ball.radius {
             // touched the ground
+            audio.play(ball.score.clone());
             if ball_x <= ARENA_WIDTH / 2.0 {
                 score.right += 1;
                 info!("Right player scored");
@@ -115,21 +117,36 @@ fn point_in_rect(
 fn bounce(
     mut ball_query: Query<(&mut Ball, &Transform)>,
     player_query: Query<(&Player, &Transform)>,
+    audio: Res<Audio>, // Audio resource added
 ) {
     for (mut ball, ball_transform) in ball_query.iter_mut() {
         let ball_x = ball_transform.translation.x;
         let ball_y = ball_transform.translation.y;
 
-        if ball_y <= ball.radius && ball.velocity.y < 0.0 {
-            ball.velocity.y = -ball.velocity.y;
-        } else if ball_y >= (ARENA_HEIGHT - ball.radius) && ball.velocity.y > 0.0 {
+        // if ball_y <= ball.radius && ball.velocity.y < 0.0 {
+        //     audio.play(ball.bounce.clone()); // bounce sound added
+        //     ball.velocity.y = -ball.velocity.y;
+        // } else if ball_y >= (ARENA_HEIGHT - ball.radius) && ball.velocity.y > 0.0 {
+        //     audio.play(ball.bounce.clone()); // bounce sound added
+        //     ball.velocity.y = -ball.velocity.y;
+        // } else if ball_x <= ball.radius && ball.velocity.x < 0.0 {
+        //     audio.play(ball.bounce.clone()); // bounce sound added
+        //     ball.velocity.x = -ball.velocity.x;
+        // } else if ball_x >= (ARENA_WIDTH - ball.radius) && ball.velocity.x > 0.0 {
+        //     audio.play(ball.bounce.clone()); // bounce sound added
+        //     ball.velocity.x = -ball.velocity.x;
+        // }
+
+        if ball_y >= (ARENA_HEIGHT - ball.radius) && ball.velocity.y > 0.0 {
+            audio.play(ball.bounce.clone());
             ball.velocity.y = -ball.velocity.y;
         } else if ball_x <= ball.radius && ball.velocity.x < 0.0 {
+            audio.play(ball.bounce.clone());
             ball.velocity.x = -ball.velocity.x;
         } else if ball_x >= (ARENA_WIDTH - ball.radius) && ball.velocity.x > 0.0 {
+            audio.play(ball.bounce.clone());
             ball.velocity.x = -ball.velocity.x;
         }
-        // ... additional collision detectino
 
         for (player, player_trans) in player_query.iter() {
             let player_x = player_trans.translation.x;
@@ -142,6 +159,7 @@ fn bounce(
                 player_x + PLAYER_WIDTH / 2.0 + ball.radius,
                 player_y + PLAYER_HEIGHT / 2.0 + ball.radius,
             ) {
+                audio.play(ball.bounce.clone());
                 if ball.velocity.y < 0.0 {
                     // Only bounce when ball is falling
                     ball.velocity.y = -ball.velocity.y;
@@ -178,6 +196,8 @@ fn move_ball(time: Res<Time>, mut query: Query<(&mut Ball, &mut Transform)>) {
 pub struct Ball {
     pub velocity: Vec2,
     pub radius: f32,
+    pub bounce: Handle<AudioSource>, // Audio source for bouncing
+    pub score: Handle<AudioSource>, // Audio source for scoring
 }
 
 fn initialize_ball(
@@ -186,10 +206,14 @@ fn initialize_ball(
     atlas: Handle<TextureAtlas>,
     ball_sprite: usize,
 ) {
+    let bounce_audio = asset_server.load("audio/bounce.ogg");
+    let score_audio = asset_server.load("audio/score.ogg");
     commands.spawn((
         Ball {
             velocity: Vec2::new(BALL_VELOCITY_X, BALL_VELOCITY_Y),
             radius: BALL_RADIUS,
+            bounce: bounce_audio,
+            score: score_audio,
         },
         SpriteSheetBundle {
             sprite: TextureAtlasSprite::new(ball_sprite),
@@ -284,7 +308,14 @@ fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    audio: Res<Audio>, // Added audio subsystem
 ) {
+    audio.play_with_settings(
+        asset_server.load(
+            "audio/Computer_Music_All_Stars_-_Albatross_v2.ogg"
+        ),
+        PlaybackSettings::LOOP.with_volume(0.25),
+    );
     let spritesheet = asset_server.load("textures/spritesheet-3.png");
     let mut sprite_atlas = TextureAtlas::new_empty(spritesheet, Vec2::new(58.0, 34.0));
     let left_cat_corner = Vec2::new(11.0, 1.0);
